@@ -10,7 +10,10 @@ import java.util.List;
 
 public class Lox {
 
+    static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
+
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
             System.out.println("Usage: jlox [script]");
@@ -53,18 +56,29 @@ public class Lox {
 
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
+        List<Stmt> statements = parser.parse();
 
         if (hadError)
-            return;
+            System.exit(65);
 
-        System.out.println(new AstPrinter().print(expression));
+        if(hadRuntimeError)
+            System.exit(70);
+
+        interpreter.interpret(statements);
+        
+        // System.out.println(new AstPrinter().print(expression));
     }
 
     public static void error(int line, String message)
     {
         report(line, "", message);
     }
+
+    static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() +
+            "\n[line " + error.token.line + "]");
+        hadRuntimeError = true;
+      }
 
     private static void report(int line,String where,String message)
     {
